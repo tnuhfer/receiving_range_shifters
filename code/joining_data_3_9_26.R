@@ -1,5 +1,5 @@
 #put together cohesive dataset
-
+library(tidyverse)
 #commercially available plants
 calscape <- read.csv("C:/Users/lnuhfer/OneDrive - University of Massachusetts/receiving_range_shifters/data/resolved/calscape_resolved_3_4_26.csv", comment.char="#")
 era <- read.csv("C:/Users/lnuhfer/OneDrive - University of Massachusetts/receiving_range_shifters/data/resolved/era_resolved_1_17_26.csv")
@@ -11,7 +11,9 @@ gpi <- read.csv("C:/Users/lnuhfer/OneDrive - University of Massachusetts/receivi
 hybrid <- read.csv("C:/Users/lnuhfer/OneDrive - University of Massachusetts/receiving_range_shifters/data/resolved/hybrid_resolved_1_12_26.csv")
 usda_plants <- read.csv("C:/Users/lnuhfer/OneDrive - University of Massachusetts/receiving_range_shifters/data/resolved/usda_characteristics_resolved_3_3_26.csv")
 will <- read.csv("C:/Users/lnuhfer/OneDrive - University of Massachusetts/receiving_range_shifters/data/resolved/will_characteristics_resolved_3_3_26.csv")
-
+gir_nuisance <- read.csv("C:/Users/lnuhfer/OneDrive - University of Massachusetts/receiving_range_shifters/data/resolved/gir_nuisance_resolved_4_8_26.csv")
+reg_native <- read.csv("C:/Users/lnuhfer/OneDrive - University of Massachusetts/receiving_range_shifters/data/resolved/reg_native_resolved_4_8_26.csv")
+seed <- read.csv("data/resolved/seed_resolved_4_22_26.csv")                         
 #create core list
 #filter calscape to commercially available
 calscape_avail <- calscape %>% filter(Nursery.Availability != "Never or Almost Never Available" & Nursery.Availability != "Rarely Available")
@@ -53,6 +55,21 @@ spp_list <- spp_list %>% left_join(select(will, Accepted_name, Range_Size, Preci
 
 names(spp_list)[15:17] <- c("will_rangesize", "will_preciprange", "will_phrange")      
 
-spp_list %>% write.csv("data/joined_data_3_9_26.csv")
+spp_list %>% filter(ResolvedName %in% gpi$Accepted_name[gpi$inv_ctry == "United States of America"]) %>% View()
+
+#add column if invasive in US per each source
+spp_list$reg_native <- FALSE
+spp_list$reg_native[spp_list$ResolvedName %in% reg_native$Accepted_name] <- TRUE
+
+spp_list$gir_nuisance <- FALSE
+spp_list$gir_nuisance[spp_list$ResolvedName %in% gir_nuisance$Accepted_name] <- TRUE
+
+#add column of seed dispersal modes
+spp_list <- spp_list %>% left_join(select(seed, c(Accepted_name, Seed_Dispersal_Category)), join_by(ResolvedName == Accepted_name)) 
+
+spp_list %>% filter(reg_native == FALSE &
+                    gir_nuisance == FALSE & 
+                    ResolvedName %in% temp$Accepted_name) %>% View()
+spp_list %>% write.csv("data/joined_data_4_22_with_dispersal.csv")
 
 
